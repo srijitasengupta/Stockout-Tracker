@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ITC Stockout Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── VARIABLES ─────────────────────── */
+:root{
+  --navy:#003087;--navyd:#001f5c;--navyl:#e8eef8;
+  --green:#0e7a40;--greenl:#e6f5ed;
+  --amber:#b45a00;--amberl:#fef0e0;
+  --red:#be1b0e;--redl:#fdecea;
+  --gold:#c9880a;--goldl:#fef4e0;
+  --gray:#64748b;--grayl:#f1f5f9;
+  --bg:#f3f5fc;--card:#fff;
+  --border:#e0e8f4;--text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --sh:0 1px 4px rgba(0,30,100,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* ── TOPBAR ────────────────────────── */
+.top{background:linear-gradient(135deg,var(--navyd),var(--navy));padding:0 14px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top-brand{display:flex;align-items:center;gap:8px}
+.top-logo{background:var(--gold);color:var(--navyd);font-weight:700;font-size:12px;letter-spacing:1px;padding:3px 8px;border-radius:4px}
+.top-title{font-size:12px;color:rgba(255,255,255,.6)}
+.top-right{display:flex;align-items:center;gap:6px}
+.live{display:flex;align-items:center;gap:4px;font-size:10px;color:#4ade80}
+.ldot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ust{font-size:10px;color:rgba(255,255,255,.4)}
+.rbtn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:11px;font-family:inherit;padding:5px 10px;border-radius:6px;cursor:pointer;touch-action:manipulation}
+.rbtn:active{transform:scale(.96)}
+
+/* ── SUMMARY BAR ───────────────────── */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 14px}
+.sm{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;box-shadow:var(--sh);text-align:center}
+.sm-v{font-size:20px;font-weight:700;line-height:1}
+.sm-l{font-size:9.5px;color:var(--text3);margin-top:2px;font-weight:500}
+.sm.open .sm-v{color:var(--red)}
+.sm.res .sm-v{color:var(--green)}
+.sm.tot .sm-v{color:var(--navy)}
+
+/* ── PAGE ──────────────────────────── */
+.page{padding:0 14px 80px}
+
+/* ── WD BLOCK ──────────────────────── */
+.wd-block{margin-bottom:12px}
+.wd-head{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-radius:10px 10px 0 0;cursor:pointer;user-select:none}
+.wd-h1{background:linear-gradient(135deg,#00276B,#003494)}
+.wd-h2{background:linear-gradient(135deg,#1040A0,#1557CC)}
+.wd-h3{background:linear-gradient(135deg,#8B4000,#B85C00)}
+.wd-name{font-size:13px;font-weight:700;color:#fff}
+.wd-badge{font-size:10px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.12);padding:2px 8px;border-radius:20px}
+.wd-body{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;overflow:hidden}
+
+/* ── DS BLOCK ──────────────────────── */
+.ds-block{border-bottom:1px solid var(--border)}
+.ds-block:last-child{border-bottom:none}
+.ds-head{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none;background:#fafbff}
+.ds-head:active{background:#f0f3ff}
+.ds-avatar{width:32px;height:32px;border-radius:50%;background:var(--navyl);color:var(--navy);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ds-name{font-size:12.5px;font-weight:600;color:var(--text);flex:1}
+.ds-count{font-size:10px;color:var(--text3)}
+.ds-body{display:none;background:var(--bg)}
+.ds-body.open{display:block}
+
+/* ── OUTLET BLOCK ──────────────────── */
+.outlet-block{margin:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--sh)}
+.outlet-name{padding:8px 12px 6px;font-size:12px;font-weight:600;color:var(--text);border-bottom:1px solid var(--border);background:#f8f9ff;display:flex;align-items:center;gap:6px}
+.outlet-name-last{padding-bottom:8px}
+
+/* ── PRODUCT ROW ───────────────────── */
+.prod-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.prod-row:last-child{border-bottom:none}
+.prod-row.resolved .prod-text{text-decoration:line-through;color:var(--text3)}
+.prod-row.resolved .done-btn{background:var(--greenl);color:var(--green);border-color:var(--green)}
+.cat-tag{display:inline-flex;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;flex-shrink:0}
+.cat-food{background:#FEF9EC;color:#92400E}
+.cat-pcp{background:#EDE9FE;color:#5B21B6}
+.cat-unk{background:var(--grayl);color:var(--gray)}
+.prod-text{flex:1;font-size:12px;color:var(--text2);line-height:1.4}
+.done-btn{flex-shrink:0;background:var(--card);border:1.5px solid var(--border);color:var(--text3);font-size:11px;font-family:inherit;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;touch-action:manipulation;transition:.15s;white-space:nowrap}
+.done-btn:active{transform:scale(.95)}
+.done-btn:not(:disabled):hover{background:var(--greenl);color:var(--green);border-color:var(--green)}
+.done-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── EMPTY STATE ───────────────────── */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-ico{font-size:36px;margin-bottom:10px}
+.empty-txt{font-size:13px;font-weight:500}
+.empty-sub{font-size:11px;margin-top:4px}
+
+/* ── LOADING ───────────────────────── */
+.loading{text-align:center;padding:50px 20px}
+.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--text3)}
+
+/* ── TOAST ─────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2340;color:#fff;font-size:12px;font-weight:500;padding:10px 20px;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* ── FILTER BAR ────────────────────── */
+.filters{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid var(--border);background:var(--card);color:var(--text3);cursor:pointer;font-family:inherit;touch-action:manipulation}
+.filter-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top">
+  <div class="top-brand">
+    <div class="top-logo">ITC</div>
+    <div class="top-title">Stockout Tracker</div>
+  </div>
+  <div class="top-right">
+    <div class="live"><div class="ldot"></div>Live</div>
+    <span class="ust" id="ust">Loading…</span>
+    <button class="rbtn" onclick="loadData()">↻</button>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="sm open"><div class="sm-v" id="s-open">—</div><div class="sm-l">Open</div></div>
+  <div class="sm res"><div class="sm-v" id="s-res">—</div><div class="sm-l">Resolved</div></div>
+  <div class="sm tot"><div class="sm-v" id="s-tot">—</div><div class="sm-l">Total</div></div>
+</div>
+
+<!-- FILTER -->
+<div class="filters">
+  <button class="filter-btn on" onclick="setFilter(this,'All')">All</button>
+  <button class="filter-btn"   onclick="setFilter(this,'Open')">Open only</button>
+  <button class="filter-btn"   onclick="setFilter(this,'Food')">Food</button>
+  <button class="filter-btn"   onclick="setFilter(this,'PCP')">PCP</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="page" id="main">
+  <div class="loading"><div class="spin"></div><div class="load-txt">Loading stockouts…</div></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// PASTE YOUR APPS SCRIPT WEB APP URL HERE
+// After deploying the Apps Script web app,
+// copy the URL and replace the placeholder below
+// ══════════════════════════════════════════
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwKw7qDItIUfjH68rWCgknIARbJlXBNjViQVzIDoWvhjarpozjYm8bWGGhuCW-bB_mawg/exec';
+
+const WD_COLORS = {
+  'Gokul Enterprise':         'wd-h1',
+  'Gokul Enterprises':        'wd-h1',
+  'GOKUL ENTERPRISES':        'wd-h1',
+  'Gokul Traders':            'wd-h2',
+  'GOKUL TRADERS':            'wd-h2',
+  'Orange City Distributors': 'wd-h3',
+  'ORANGE CITY':              'wd-h3',
+};
+
+let ALL_DATA   = [];
+let CUR_FILTER = 'All';
+
+// ── FILTER ────────────────────────────────
+function setFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  CUR_FILTER = filter;
+  render(ALL_DATA);
+}
+
+function applyFilter(rows) {
+  return rows.filter(r => {
+    if (CUR_FILTER === 'Open') return r['Status'] !== 'Resolved';
+    if (CUR_FILTER === 'Food') return r['Category'] === 'Food';
+    if (CUR_FILTER === 'PCP')  return r['Category'] === 'PCP';
+    return true;
+  });
+}
+
+// ── LOAD DATA ─────────────────────────────
+async function loadData() {
+  document.getElementById('ust').textContent = 'Loading…';
+  try {
+    const res  = await fetch(WEBAPP_URL + '?action=data&t=' + Date.now());
+    const data = await res.json();
+    ALL_DATA   = data;
+    render(data);
+    const t = new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+    document.getElementById('ust').textContent = t;
+  } catch(e) {
+    console.error(e);
+    document.getElementById('ust').textContent = 'Error';
+    document.getElementById('main').innerHTML = `
+      <div class="empty">
+        <div class="empty-ico">⚠️</div>
+        <div class="empty-txt">Could not load data</div>
+        <div class="empty-sub">Check WEBAPP_URL in the code</div>
+      </div>`;
+  }
+}
+
+// ── RENDER ────────────────────────────────
+function render(rawData) {
+  const data = applyFilter(rawData);
+
+  // Summary counts from ALL data (not filtered)
+  const open = ALL_DATA.filter(r => r['Status'] !== 'Resolved').length;
+  const res  = ALL_DATA.filter(r => r['Status'] === 'Resolved').length;
+  document.getElementById('s-open').textContent = open;
+  document.getElementById('s-res').textContent  = res;
+  document.getElementById('s-tot').textContent  = ALL_DATA.length;
+
+  if (!data.length) {
+    document.getElementById('main').innerHTML = `
+      <div class="empty">
+        <div class="empty-ico">✅</div>
+        <div class="empty-txt">No stockouts to show</div>
+        <div class="empty-sub">All clear for selected filter</div>
+      </div>`;
+    return;
+  }
+
+  // Group: WD → DS → Outlet → rows
+  const grouped = {};
+  data.forEach(row => {
+    const wd     = row['WD']      || 'Unknown WD';
+    const ds     = row['DS Name'] || 'Unknown DS';
+    const outlet = row['Matched Outlet'] || row['Outlet Name'] || 'Unknown Outlet';
+
+    if (!grouped[wd])         grouped[wd]         = {};
+    if (!grouped[wd][ds])     grouped[wd][ds]      = {};
+    if (!grouped[wd][ds][outlet]) grouped[wd][ds][outlet] = [];
+    grouped[wd][ds][outlet].push(row);
+  });
+
+  let html = '';
+  Object.entries(grouped).forEach(([wd, dsMap]) => {
+    const wdClass  = WD_COLORS[wd] || 'wd-h1';
+    const wdOpen   = Object.values(dsMap)
+      .flatMap(d => Object.values(d).flat())
+      .filter(r => r['Status'] !== 'Resolved').length;
+
+    html += `
+    <div class="wd-block">
+      <div class="wd-head ${wdClass}" onclick="toggleWD(this)">
+        <div class="wd-name">${wd}</div>
+        <div class="wd-badge">${wdOpen > 0 ? wdOpen + ' open' : 'All clear ✓'}</div>
+      </div>
+      <div class="wd-body">`;
+
+    Object.entries(dsMap).forEach(([ds, outletMap]) => {
+      const dsOpen  = Object.values(outletMap).flat().filter(r => r['Status'] !== 'Resolved').length;
+      const inits   = ds.trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+      const dsId    = 'ds-' + Math.random().toString(36).slice(2,8);
+
+      html += `
+      <div class="ds-block">
+        <div class="ds-head" onclick="toggleDS('${dsId}')">
+          <div class="ds-avatar">${inits}</div>
+          <div class="ds-name">${ds}</div>
+          <div class="ds-count">${dsOpen > 0 ? dsOpen + ' open' : '✓ clear'}</div>
+        </div>
+        <div class="ds-body" id="${dsId}">`;
+
+      Object.entries(outletMap).forEach(([outlet, rows]) => {
+        html += `<div class="outlet-block">
+          <div class="outlet-name">📍 ${outlet}</div>`;
+
+        rows.forEach(row => {
+          const resolved = row['Status'] === 'Resolved';
+          const cat      = row['Category'] || 'Unknown';
+          const catClass = cat === 'Food' ? 'cat-food' : cat === 'PCP' ? 'cat-pcp' : 'cat-unk';
+          const products = row['Products Missing'] || '—';
+          const rowId    = row['Row ID'] || '';
+          const loggedAt = row['Logged At'] || '';
+
+          html += `
+          <div class="prod-row ${resolved ? 'resolved' : ''}" id="row-${rowId}">
+            <span class="cat-tag ${catClass}">${cat}</span>
+            <div class="prod-text">
+              ${products}
+              ${loggedAt ? `<div style="font-size:9.5px;color:var(--text3);margin-top:2px">${loggedAt}</div>` : ''}
+            </div>
+            <button class="done-btn"
+              onclick="markDone('${rowId}', this)"
+              ${resolved ? 'disabled' : ''}>
+              ${resolved ? '✓ Done' : 'Order Placed'}
+            </button>
+          </div>`;
+        });
+
+        html += `</div>`; // outlet-block
+      });
+
+      html += `</div></div>`; // ds-body + ds-block
+    });
+
+    html += `</div></div>`; // wd-body + wd-block
+  });
+
+  document.getElementById('main').innerHTML = html;
+}
+
+// ── MARK DONE ─────────────────────────────
+async function markDone(rowId, btn) {
+  if (!rowId) return;
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    const res    = await fetch(`${WEBAPP_URL}?action=resolve&id=${rowId}&t=${Date.now()}`);
+    const result = await res.json();
+
+    if (result.success) {
+      // Update UI immediately — strikethrough
+      const prodRow = document.getElementById('row-' + rowId);
+      if (prodRow) {
+        prodRow.classList.add('resolved');
+        btn.textContent = '✓ Done';
+
+        // Update summary counts
+        const open = ALL_DATA.filter(r => r['Status'] !== 'Resolved').length - 1;
+        const res2 = ALL_DATA.filter(r => r['Status'] === 'Resolved').length + 1;
+        document.getElementById('s-open').textContent = Math.max(0, open);
+        document.getElementById('s-res').textContent  = res2;
+
+        // Update local data
+        const found = ALL_DATA.find(r => r['Row ID'] === rowId);
+        if (found) found['Status'] = 'Resolved';
+      }
+      showToast('✓ Order marked as placed');
+    } else {
+      btn.disabled    = false;
+      btn.textContent = 'Order Placed';
+      showToast('Could not update — try again');
+    }
+  } catch(e) {
+    btn.disabled    = false;
+    btn.textContent = 'Order Placed';
+    showToast('Network error — try again');
+  }
+}
+
+// ── TOGGLE WD SECTION ─────────────────────
+function toggleWD(head) {
+  const body = head.nextElementSibling;
+  body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+
+// ── TOGGLE DS SECTION ─────────────────────
+function toggleDS(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// ── TOAST ─────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── AUTO REFRESH every 2 mins ─────────────
+loadData();
+setInterval(loadData, 2 * 60 * 1000);
+</script>
+</body>
+</html>
